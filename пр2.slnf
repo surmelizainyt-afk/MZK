@@ -1,0 +1,8 @@
+{
+  "solution": {
+    "path": "ClassroomBooking\\ClassroomBooking.slnx",
+    "projects": [
+      "ClassroomBooking\\ClassroomBooking.csproj"
+    ]
+  }
+}
