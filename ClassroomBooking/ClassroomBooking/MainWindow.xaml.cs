@@ -26,6 +26,8 @@ namespace ClassroomBooking
         }
 
         private void BookButton_Click(object sender, RoutedEventArgs e)
+
+
         {
             if (!(UserComboBox.SelectedItem is User user))
             {

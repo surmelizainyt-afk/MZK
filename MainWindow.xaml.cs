@@ -5,11 +5,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using ClassroomBooking.Configuration;
 
 namespace ClassroomBooking
 {
     public partial class MainWindow : Window
     {
+        private readonly ConfigService configService = new ConfigService();
+
+        private AppSettings settings;
+
         private readonly UserService userService = new UserService();
         private readonly RoomService roomService = new RoomService();
         private readonly BookingService bookingService = new BookingService();
@@ -17,6 +22,11 @@ namespace ClassroomBooking
         public MainWindow()
         {
             InitializeComponent();
+
+            settings = configService.Load();
+
+            Title = settings.AppTitle;
+            StatusTextBox.Text = settings.StatusMessage;
 
             UserComboBox.ItemsSource = userService.GetUsers();
             RoomComboBox.ItemsSource = roomService.GetRooms();
@@ -48,9 +58,40 @@ namespace ClassroomBooking
             if (!TimeSpan.TryParse(StartTimeTextBox.Text, out TimeSpan start) ||
                 !TimeSpan.TryParse(EndTimeTextBox.Text, out TimeSpan end))
             {
-                StatusTextBox.Text = "Некорректное время.";
+                StatusTextBox.Text = "";
                 return;
             }
+
+                TimeSpan workStart;
+                TimeSpan workEnd;
+            
+            if (!TimeSpan.TryParse(settings.WorkDayStart, out workStart) ||
+                !TimeSpan.TryParse(settings.WorkDayEnd, out workEnd))
+            {
+                StatusTextBox.Text = 
+                    "Ошибка конфигурации рабочего времени.";
+                return;
+            }
+
+            if (start < workStart || end > workEnd)
+            {
+                StatusTextBox.Text = 
+                    "Бронирование доступно с " +
+                    settings.WorkDayStart + " до " +
+                    settings.WorkDayEnd + ".";
+                return;
+
+            }
+
+            double duration = (end - start).TotalMinutes;
+
+            if (duration < settings.MinBookingMinutes)
+            {
+                StatusTextBox.Text = "Минимальная длительность - " +
+                    settings.MinBookingMinutes + " минут.";
+                return;
+            }
+
 
             if (start >= end)
             {
@@ -73,6 +114,11 @@ namespace ClassroomBooking
                 return;
             }
 
+            if (!room.IsAvailable && !settings.AllowUnavailableRooms)
+            {
+                StatusTextBox.Text = "Выбранная аудитория недоступна для бронирования.";
+                return;
+            }
             StatusTextBox.Text = "Бронирование создано.";
             RefreshBookings();
         }
